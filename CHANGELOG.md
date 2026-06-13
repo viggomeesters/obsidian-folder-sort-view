@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Clarified the plugin scope as a read-only alternate navigation pane, not a File Explorer replacement.
+- Updated public metadata copy to emphasize no native File Explorer patching or replacement.
+
 ## 0.1.1
 
 - Render children lazily from public `TFolder.children` instead of rebuilding a full vault tree every render.

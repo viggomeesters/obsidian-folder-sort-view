@@ -1,9 +1,9 @@
 {
   "id": "folder-sort-view",
   "name": "Folder Sort View",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minAppVersion": "1.5.0",
-  "description": "Adds a separate folder view with folders sorted Z-to-A using public APIs only.",
+  "description": "Read-only alternate navigation pane for folders/files with custom sorting. Does not replace or patch Obsidian File Explorer.",
   "author": "Viggo Meesters",
   "isDesktopOnly": false
 }
