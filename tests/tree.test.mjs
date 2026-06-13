@@ -1,9 +1,21 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildFolderSortTree, flattenVisibleNodes } from "../dist/tree.mjs";
+import { buildFolderSortTree, flattenVisibleNodes, sortFolderEntries } from "../dist/tree.mjs";
 
 const folder = (path, name) => ({ type: "folder", path, name });
 const file = (path, name) => ({ type: "file", path, name });
+
+test("sortFolderEntries sorts only one level so runtime can render lazily", () => {
+  const entries = [
+    file("b.md", "b.md"),
+    folder("Alpha", "Alpha"),
+    file("root.md", "root.md"),
+    folder("zeta", "zeta"),
+    file("a.md", "a.md"),
+  ];
+  assert.deepEqual(sortFolderEntries(entries).map((node) => node.path), ["zeta", "Alpha", "a.md", "b.md", "root.md"]);
+  assert.deepEqual(entries.map((node) => node.path), ["b.md", "Alpha", "root.md", "zeta", "a.md"]);
+});
 
 test("builds a public-api tree with folders sorted Z-to-A before files", () => {
   const tree = buildFolderSortTree([

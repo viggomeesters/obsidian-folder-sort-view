@@ -7,7 +7,7 @@ Folder Sort View adds a separate sidebar view with folders sorted Z-to-A using O
 - Separate `Folder Sort View` sidebar.
 - Folders sorted Z-to-A.
 - Files sorted A-to-Z inside each folder.
-- Click folders to expand/collapse.
+- Click folders to expand/collapse. Descendants are rendered lazily only when their folder is expanded.
 - Click files to open them through Obsidian's normal workspace flow.
 - No native File Explorer monkeypatching, no copied Obsidian source, no vault writes, no network, no clipboard.
 

@@ -15,6 +15,10 @@ export type FolderSortRoot = {
   children: FolderSortNode[];
 };
 
+export function sortFolderEntries<T extends FolderSortEntry>(entries: readonly T[]): T[] {
+  return [...entries].sort(compareEntries);
+}
+
 export function buildFolderSortTree(entries: readonly FolderSortEntry[]): FolderSortRoot {
   const root: FolderSortRoot = { type: "folder", path: "", name: "", children: [] };
   const folders = new Map<string, FolderSortNode>();
@@ -57,11 +61,11 @@ export function flattenVisibleNodes(root: FolderSortRoot, expandedFolders: Reado
 }
 
 function sortTree(node: FolderSortRoot | FolderSortNode): void {
-  node.children.sort(compareNodes);
+  node.children.sort(compareEntries);
   for (const child of node.children) sortTree(child);
 }
 
-function compareNodes(left: FolderSortNode, right: FolderSortNode): number {
+function compareEntries(left: FolderSortEntry, right: FolderSortEntry): number {
   if (left.type !== right.type) return left.type === "folder" ? -1 : 1;
   const direction = left.type === "folder" ? -1 : 1;
   return direction * left.name.localeCompare(right.name, undefined, { sensitivity: "base", numeric: true });

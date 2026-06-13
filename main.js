@@ -25,62 +25,18 @@ module.exports = __toCommonJS(main_exports);
 var import_obsidian = require("obsidian");
 
 // src/tree.ts
-function buildFolderSortTree(entries) {
-  const root = { type: "folder", path: "", name: "", children: [] };
-  const folders = /* @__PURE__ */ new Map();
-  const ensureFolder = (path, name) => {
-    const existing = folders.get(path);
-    if (existing) return existing;
-    const node = { type: "folder", path, name, children: [] };
-    folders.set(path, node);
-    const parentPath = getParentPath(path);
-    const parent = parentPath ? ensureFolder(parentPath, getBaseName(parentPath)) : root;
-    parent.children.push(node);
-    return node;
-  };
-  for (const entry of entries) {
-    if (entry.type === "folder") {
-      ensureFolder(entry.path, entry.name);
-      continue;
-    }
-    const parentPath = getParentPath(entry.path);
-    const parent = parentPath ? ensureFolder(parentPath, getBaseName(parentPath)) : root;
-    parent.children.push({ ...entry, children: [] });
-  }
-  sortTree(root);
-  return root;
+function sortFolderEntries(entries) {
+  return [...entries].sort(compareEntries);
 }
-function flattenVisibleNodes(root, expandedFolders) {
-  const visible = [];
-  const visit = (nodes) => {
-    for (const node of nodes) {
-      visible.push(node);
-      if (node.type === "folder" && expandedFolders.has(node.path)) visit(node.children);
-    }
-  };
-  visit(root.children);
-  return visible;
-}
-function sortTree(node) {
-  node.children.sort(compareNodes);
-  for (const child of node.children) sortTree(child);
-}
-function compareNodes(left, right) {
+function compareEntries(left, right) {
   if (left.type !== right.type) return left.type === "folder" ? -1 : 1;
   const direction = left.type === "folder" ? -1 : 1;
   return direction * left.name.localeCompare(right.name, void 0, { sensitivity: "base", numeric: true });
 }
-function getParentPath(path) {
-  const index = path.lastIndexOf("/");
-  return index === -1 ? "" : path.slice(0, index);
-}
-function getBaseName(path) {
-  var _a;
-  return (_a = path.split("/").pop()) != null ? _a : path;
-}
 
 // src/main.ts
 var VIEW_TYPE_FOLDER_SORT = "folder-sort-view";
+var REFRESH_DELAY_MS = 120;
 var FolderSortViewPlugin = class extends import_obsidian.Plugin {
   async onload() {
     this.registerView(VIEW_TYPE_FOLDER_SORT, (leaf) => new FolderSortView(leaf, this));
@@ -134,46 +90,51 @@ var FolderSortView = class extends import_obsidian.ItemView {
     this.refreshTimer = window.setTimeout(() => {
       this.refreshTimer = null;
       this.render();
-    }, 120);
+    }, REFRESH_DELAY_MS);
   }
   render() {
+    this.pruneExpandedFolders();
     const container = this.contentEl;
     container.empty();
     container.addClass("folder-sort-view");
     const header = container.createDiv({ cls: "folder-sort-view__header" });
     header.createSpan({ text: "Folder Sort View" });
     const list = container.createDiv({ cls: "folder-sort-view__list" });
-    const tree = buildFolderSortTree(this.getEntries());
-    for (const node of flattenVisibleNodes(tree, this.expandedFolders)) this.renderNode(list, node);
+    this.renderChildren(list, this.app.vault.getRoot(), 0);
   }
-  getEntries() {
-    const entries = [];
-    const collect = (folder) => {
-      for (const child of folder.children) {
-        if (child instanceof import_obsidian.TFolder) {
-          entries.push({ type: "folder", path: child.path, name: child.name });
-          collect(child);
-        } else if (child instanceof import_obsidian.TFile) {
-          entries.push({ type: "file", path: child.path, name: child.name });
-        }
+  renderChildren(list, folder, depth) {
+    for (const child of this.getSortedChildren(folder)) {
+      this.renderChild(list, child, depth);
+      if (child.file instanceof import_obsidian.TFolder && this.expandedFolders.has(child.path)) {
+        this.renderChildren(list, child.file, depth + 1);
       }
-    };
-    collect(this.app.vault.getRoot());
-    return entries;
+    }
   }
-  renderNode(list, node) {
-    const depth = node.path.split("/").length - 1;
-    const button = list.createEl("button", { cls: `folder-sort-view__item folder-sort-view__${node.type}`, attr: { type: "button", title: node.path } });
+  pruneExpandedFolders() {
+    for (const path of this.expandedFolders) {
+      if (!(this.app.vault.getAbstractFileByPath(path) instanceof import_obsidian.TFolder)) this.expandedFolders.delete(path);
+    }
+  }
+  getSortedChildren(folder) {
+    const children = [];
+    for (const child of folder.children) {
+      if (child instanceof import_obsidian.TFolder) children.push({ type: "folder", path: child.path, name: child.name, file: child });
+      else if (child instanceof import_obsidian.TFile) children.push({ type: "file", path: child.path, name: child.name, file: child });
+    }
+    return sortFolderEntries(children);
+  }
+  renderChild(list, child, depth) {
+    const button = list.createEl("button", { cls: `folder-sort-view__item folder-sort-view__${child.type}`, attr: { type: "button", title: child.path } });
     button.style.paddingLeft = `${depth * 14 + 4}px`;
-    (0, import_obsidian.setIcon)(button, node.type === "folder" ? this.expandedFolders.has(node.path) ? "chevron-down" : "chevron-right" : "file");
-    button.createSpan({ text: node.name });
+    (0, import_obsidian.setIcon)(button, child.type === "folder" ? this.expandedFolders.has(child.path) ? "chevron-down" : "chevron-right" : "file");
+    button.createSpan({ text: child.name });
     button.addEventListener("click", () => {
-      if (node.type === "folder") {
-        if (this.expandedFolders.has(node.path)) this.expandedFolders.delete(node.path);
-        else this.expandedFolders.add(node.path);
+      if (child.file instanceof import_obsidian.TFolder) {
+        if (this.expandedFolders.has(child.path)) this.expandedFolders.delete(child.path);
+        else this.expandedFolders.add(child.path);
         this.render();
-      } else {
-        const file = this.app.vault.getAbstractFileByPath(node.path);
+      } else if (child.file instanceof import_obsidian.TFile) {
+        const file = this.app.vault.getAbstractFileByPath(child.path);
         if (file instanceof import_obsidian.TFile) void this.app.workspace.getLeaf(false).openFile(file);
       }
     });

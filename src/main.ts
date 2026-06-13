@@ -1,7 +1,10 @@
-import { ItemView, Plugin, TFile, TFolder, WorkspaceLeaf, setIcon } from "obsidian";
-import { buildFolderSortTree, flattenVisibleNodes, type FolderSortEntry, type FolderSortNode } from "./tree";
+import { ItemView, Plugin, TAbstractFile, TFile, TFolder, WorkspaceLeaf, setIcon } from "obsidian";
+import { sortFolderEntries, type FolderSortEntry } from "./tree";
 
 const VIEW_TYPE_FOLDER_SORT = "folder-sort-view";
+const REFRESH_DELAY_MS = 120;
+
+type FolderSortChild = FolderSortEntry & { file: TAbstractFile };
 
 export default class FolderSortViewPlugin extends Plugin {
   async onload(): Promise<void> {
@@ -23,7 +26,7 @@ export default class FolderSortViewPlugin extends Plugin {
 
 class FolderSortView extends ItemView {
   private readonly plugin: FolderSortViewPlugin;
-  private expandedFolders = new Set<string>();
+  private readonly expandedFolders = new Set<string>();
   private refreshTimer: number | null = null;
 
   constructor(leaf: WorkspaceLeaf, plugin: FolderSortViewPlugin) {
@@ -55,49 +58,56 @@ class FolderSortView extends ItemView {
     this.refreshTimer = window.setTimeout(() => {
       this.refreshTimer = null;
       this.render();
-    }, 120);
+    }, REFRESH_DELAY_MS);
   }
 
   private render(): void {
+    this.pruneExpandedFolders();
     const container = this.contentEl;
     container.empty();
     container.addClass("folder-sort-view");
     const header = container.createDiv({ cls: "folder-sort-view__header" });
     header.createSpan({ text: "Folder Sort View" });
     const list = container.createDiv({ cls: "folder-sort-view__list" });
-    const tree = buildFolderSortTree(this.getEntries());
-    for (const node of flattenVisibleNodes(tree, this.expandedFolders)) this.renderNode(list, node);
+    this.renderChildren(list, this.app.vault.getRoot(), 0);
   }
 
-  private getEntries(): FolderSortEntry[] {
-    const entries: FolderSortEntry[] = [];
-    const collect = (folder: TFolder) => {
-      for (const child of folder.children) {
-        if (child instanceof TFolder) {
-          entries.push({ type: "folder", path: child.path, name: child.name });
-          collect(child);
-        } else if (child instanceof TFile) {
-          entries.push({ type: "file", path: child.path, name: child.name });
-        }
+  private renderChildren(list: HTMLElement, folder: TFolder, depth: number): void {
+    for (const child of this.getSortedChildren(folder)) {
+      this.renderChild(list, child, depth);
+      if (child.file instanceof TFolder && this.expandedFolders.has(child.path)) {
+        this.renderChildren(list, child.file, depth + 1);
       }
-    };
-    collect(this.app.vault.getRoot());
-    return entries;
+    }
   }
 
-  private renderNode(list: HTMLElement, node: FolderSortNode): void {
-    const depth = node.path.split("/").length - 1;
-    const button = list.createEl("button", { cls: `folder-sort-view__item folder-sort-view__${node.type}`, attr: { type: "button", title: node.path } });
+  private pruneExpandedFolders(): void {
+    for (const path of this.expandedFolders) {
+      if (!(this.app.vault.getAbstractFileByPath(path) instanceof TFolder)) this.expandedFolders.delete(path);
+    }
+  }
+
+  private getSortedChildren(folder: TFolder): FolderSortChild[] {
+    const children: FolderSortChild[] = [];
+    for (const child of folder.children) {
+      if (child instanceof TFolder) children.push({ type: "folder", path: child.path, name: child.name, file: child });
+      else if (child instanceof TFile) children.push({ type: "file", path: child.path, name: child.name, file: child });
+    }
+    return sortFolderEntries(children);
+  }
+
+  private renderChild(list: HTMLElement, child: FolderSortChild, depth: number): void {
+    const button = list.createEl("button", { cls: `folder-sort-view__item folder-sort-view__${child.type}`, attr: { type: "button", title: child.path } });
     button.style.paddingLeft = `${depth * 14 + 4}px`;
-    setIcon(button, node.type === "folder" ? (this.expandedFolders.has(node.path) ? "chevron-down" : "chevron-right") : "file");
-    button.createSpan({ text: node.name });
+    setIcon(button, child.type === "folder" ? (this.expandedFolders.has(child.path) ? "chevron-down" : "chevron-right") : "file");
+    button.createSpan({ text: child.name });
     button.addEventListener("click", () => {
-      if (node.type === "folder") {
-        if (this.expandedFolders.has(node.path)) this.expandedFolders.delete(node.path);
-        else this.expandedFolders.add(node.path);
+      if (child.file instanceof TFolder) {
+        if (this.expandedFolders.has(child.path)) this.expandedFolders.delete(child.path);
+        else this.expandedFolders.add(child.path);
         this.render();
-      } else {
-        const file = this.app.vault.getAbstractFileByPath(node.path);
+      } else if (child.file instanceof TFile) {
+        const file = this.app.vault.getAbstractFileByPath(child.path);
         if (file instanceof TFile) void this.app.workspace.getLeaf(false).openFile(file);
       }
     });

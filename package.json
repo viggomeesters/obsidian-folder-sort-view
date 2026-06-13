@@ -1,6 +1,6 @@
 {
   "name": "obsidian-folder-sort-view",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Public-API folder view for Obsidian with folders sorted Z-to-A.",
   "type": "module",
   "main": "main.js",
