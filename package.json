@@ -1,0 +1,27 @@
+{
+  "name": "obsidian-folder-sort-view",
+  "version": "0.1.0",
+  "description": "Public-API folder view for Obsidian with folders sorted Z-to-A.",
+  "type": "module",
+  "main": "main.js",
+  "scripts": {
+    "build": "NODE_ENV=production node esbuild.config.mjs",
+    "dev": "node esbuild.config.mjs",
+    "build:test": "esbuild src/tree.ts --bundle --platform=node --format=esm --outfile=dist/tree.mjs",
+    "lint": "node scripts/lint.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build:test && node --test tests/*.test.mjs && npm run build && node scripts/smoke.mjs",
+    "sync:test-vault": "npm run build && node scripts/sync-test-vault.mjs",
+    "smoke:cdp": "node scripts/smoke-cdp.mjs",
+    "community:check": "node scripts/community-check.mjs",
+    "version": "node version-bump.mjs && git add manifest.json versions.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.30",
+    "builtin-modules": "^5.0.0",
+    "esbuild": "^0.25.5",
+    "obsidian": "^1.8.7",
+    "tslib": "^2.8.1",
+    "typescript": "^5.8.3"
+  }
+}
