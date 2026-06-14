@@ -1,9 +1,9 @@
 {
   "id": "folder-sort-view",
   "name": "Folder Sort View",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "minAppVersion": "1.5.0",
-  "description": "Read-only alternate navigation pane for folders/files with custom sorting. Does not replace or patch Obsidian File Explorer.",
+  "description": "Read-only alternate navigation pane for folders/files with custom sorting. Does not replace or patch the core file explorer.",
   "author": "Viggo Meesters",
   "isDesktopOnly": false
 }

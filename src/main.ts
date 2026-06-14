@@ -13,14 +13,9 @@ export default class FolderSortViewPlugin extends Plugin {
     this.addCommand({ id: "open-folder-sort-view", name: "Open Folder Sort View", callback: () => { void this.activateView(); } });
   }
 
-  onunload(): void {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_FOLDER_SORT);
-  }
-
   async activateView(): Promise<void> {
     const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOLDER_SORT)[0] ?? this.app.workspace.getLeftLeaf(false) ?? this.app.workspace.getLeaf(false);
     await leaf.setViewState({ type: VIEW_TYPE_FOLDER_SORT, active: true });
-    this.app.workspace.revealLeaf(leaf);
   }
 }
 

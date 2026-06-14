@@ -47,14 +47,10 @@ var FolderSortViewPlugin = class extends import_obsidian.Plugin {
       void this.activateView();
     } });
   }
-  onunload() {
-    this.app.workspace.detachLeavesOfType(VIEW_TYPE_FOLDER_SORT);
-  }
   async activateView() {
     var _a, _b;
     const leaf = (_b = (_a = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOLDER_SORT)[0]) != null ? _a : this.app.workspace.getLeftLeaf(false)) != null ? _b : this.app.workspace.getLeaf(false);
     await leaf.setViewState({ type: VIEW_TYPE_FOLDER_SORT, active: true });
-    this.app.workspace.revealLeaf(leaf);
   }
 };
 var FolderSortView = class extends import_obsidian.ItemView {

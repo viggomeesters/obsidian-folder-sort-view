@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3
+
+- Removed `Obsidian` from the manifest description to satisfy directory metadata review.
+- Stopped detaching custom view leaves during `onunload`, preserving user pane placement.
+- Removed `workspace.revealLeaf` usage so the plugin stays compatible with the declared `minAppVersion`.
+- Hardened `npm run community:check` to catch these automatic-review failures before release.
+
 ## 0.1.2
 
 - Clarified the plugin scope as a read-only alternate navigation pane, not a File Explorer replacement.
