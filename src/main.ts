@@ -1,5 +1,10 @@
-import { ItemView, Plugin, TAbstractFile, TFile, TFolder, WorkspaceLeaf, setIcon } from "obsidian";
+import { ItemView, Plugin, TAbstractFile, TFile, TFolder, WorkspaceLeaf, requireApiVersion, setIcon } from "obsidian";
 import { sortFolderEntries, type FolderSortEntry } from "./tree";
+
+// Compatibility shape of Workspace.revealLeaf in obsidian@1.4.11 and 1.5.7.
+interface LegacyRevealWorkspace {
+  revealLeaf(leaf: WorkspaceLeaf): void;
+}
 
 const VIEW_TYPE_FOLDER_SORT = "folder-sort-view";
 const REFRESH_DELAY_MS = 120;
@@ -10,12 +15,21 @@ export default class FolderSortViewPlugin extends Plugin {
   async onload(): Promise<void> {
     this.registerView(VIEW_TYPE_FOLDER_SORT, (leaf) => new FolderSortView(leaf, this));
     this.addRibbonIcon("folder-tree", "Open Folder Sort View", () => { void this.activateView(); });
-    this.addCommand({ id: "open-folder-sort-view", name: "Open Folder Sort View", callback: () => { void this.activateView(); } });
+    this.addCommand({ id: "open-folder-sort-view", name: "Open view", callback: () => { void this.activateView(); } });
   }
 
   async activateView(): Promise<void> {
     const leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOLDER_SORT)[0] ?? this.app.workspace.getLeftLeaf(false) ?? this.app.workspace.getLeaf(false);
     await leaf.setViewState({ type: VIEW_TYPE_FOLDER_SORT, active: true });
+    const workspace = this.app.workspace;
+    if (requireApiVersion("1.7.2")) {
+      await workspace.revealLeaf(leaf);
+    } else {
+      // Public before 1.5.0; only the Promise return was introduced in 1.7.2.
+      // Keep the old void signature to support the declared minimum API.
+      const legacyWorkspace: LegacyRevealWorkspace = workspace;
+      legacyWorkspace.revealLeaf(leaf);
+    }
   }
 }
 

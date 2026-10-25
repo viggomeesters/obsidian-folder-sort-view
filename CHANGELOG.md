@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4 - 2026-10-25
+
+- Reveal the sidebar leaf when opening the view, including an already-created view.
+- Cross-platform production build.
+
+
 ## 0.1.3
 
 - Removed `Obsidian` from the manifest description to satisfy directory metadata review.

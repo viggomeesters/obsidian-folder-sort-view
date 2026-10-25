@@ -43,7 +43,7 @@ var FolderSortViewPlugin = class extends import_obsidian.Plugin {
     this.addRibbonIcon("folder-tree", "Open Folder Sort View", () => {
       void this.activateView();
     });
-    this.addCommand({ id: "open-folder-sort-view", name: "Open Folder Sort View", callback: () => {
+    this.addCommand({ id: "open-folder-sort-view", name: "Open view", callback: () => {
       void this.activateView();
     } });
   }
@@ -51,6 +51,13 @@ var FolderSortViewPlugin = class extends import_obsidian.Plugin {
     var _a, _b;
     const leaf = (_b = (_a = this.app.workspace.getLeavesOfType(VIEW_TYPE_FOLDER_SORT)[0]) != null ? _a : this.app.workspace.getLeftLeaf(false)) != null ? _b : this.app.workspace.getLeaf(false);
     await leaf.setViewState({ type: VIEW_TYPE_FOLDER_SORT, active: true });
+    const workspace = this.app.workspace;
+    if ((0, import_obsidian.requireApiVersion)("1.7.2")) {
+      await workspace.revealLeaf(leaf);
+    } else {
+      const legacyWorkspace = workspace;
+      legacyWorkspace.revealLeaf(leaf);
+    }
   }
 };
 var FolderSortView = class extends import_obsidian.ItemView {

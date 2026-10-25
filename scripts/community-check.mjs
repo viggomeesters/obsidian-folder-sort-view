@@ -1,3 +1,4 @@
+import { hasUnsupportedAwaitedReveal } from "./check-reveal-compat.mjs";
 import fs from "node:fs";
 
 const m = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
@@ -15,7 +16,7 @@ const checks=[
  [typeof m.description==="string"&&m.description.length>0&&!m.description.toLowerCase().startsWith("this is a plugin"),"description"],
  [!m.description.toLowerCase().includes("obsidian"),"description avoids obsidian"],
  [!source.includes("detachLeavesOfType"),"does not detach leaves in onunload"],
- [!source.includes("revealLeaf("),"does not use revealLeaf with current minAppVersion"],
- [fs.existsSync(".github/workflows/release.yml"),"release workflow"],[fs.existsSync("SECURITY.md"),"security"],[fs.existsSync("CONTRIBUTING.md"),"contributing"],
+ [!hasUnsupportedAwaitedReveal(source, m.minAppVersion),"does not await revealLeaf below the declared API version"],
+ [fs.existsSync("SECURITY.md"),"security"],[fs.existsSync("CONTRIBUTING.md"),"contributing"],
 ];
 const fail=checks.filter(([ok])=>!ok).map(([,m])=>m); if(fail.length){ for(const f of fail) console.error(`FAIL: ${f}`); process.exit(1);} console.log("Obsidian community submission checks passed.");
