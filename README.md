@@ -38,3 +38,6 @@ npm run community:check
 ## Release
 
 Create a GitHub release whose tag exactly matches `manifest.json.version` and attach `main.js`, `manifest.json`, and `styles.css`.
+
+
+[Obsidian 1.15.1 assessment: checked source, local results and remaining host validation](docs/obsidian-1.15.1.md).
